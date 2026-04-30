@@ -1,3 +1,7 @@
+import tinsUrl from "@/data/tins.bin?url";
+import detailsUrl from "@/data/details.bin?url";
+import metaUrl from "@/data/meta.json?url";
+
 export type MetaEntry = { zone: string; circle: string; submission_type: string };
 export type LookupResult = MetaEntry & { tin: string; year: string };
 
@@ -13,10 +17,13 @@ let bundlePromise: Promise<DataBundle> | null = null;
 
 async function loadBundle(): Promise<DataBundle> {
   const [tinsRes, detailsRes, metaRes] = await Promise.all([
-    fetch("/data/tins.bin"),
-    fetch("/data/details.bin"),
-    fetch("/data/meta.json"),
+    fetch(tinsUrl),
+    fetch(detailsUrl),
+    fetch(metaUrl),
   ]);
+  if (!tinsRes.ok || !detailsRes.ok || !metaRes.ok) {
+    throw new Error("Failed to load audit data");
+  }
   const [tinsBuf, detailsBuf, metaJson] = await Promise.all([
     tinsRes.arrayBuffer(),
     detailsRes.arrayBuffer(),
@@ -34,10 +41,6 @@ async function loadBundle(): Promise<DataBundle> {
 export function ensureData(): Promise<DataBundle> {
   if (!bundlePromise) bundlePromise = loadBundle();
   return bundlePromise;
-}
-
-export function preloadData() {
-  void ensureData();
 }
 
 export async function lookupTin(tin: string): Promise<LookupResult | null> {
@@ -59,9 +62,4 @@ export async function lookupTin(tin: string): Promise<LookupResult | null> {
     else hi = mid - 1;
   }
   return null;
-}
-
-export async function getStats() {
-  const d = await ensureData();
-  return { count: d.count, year: d.year };
 }
