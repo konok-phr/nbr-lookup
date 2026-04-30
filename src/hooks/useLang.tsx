@@ -4,7 +4,7 @@ import { strings, type Lang } from "@/i18n/strings";
 type Ctx = {
   lang: Lang;
   setLang: (l: Lang) => void;
-  t: (typeof strings)["en"];
+  t: typeof strings.en;
 };
 
 const LangContext = createContext<Ctx | null>(null);
