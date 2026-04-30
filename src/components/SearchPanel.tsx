@@ -2,7 +2,19 @@ import { useEffect, useRef, useState } from "react";
 import { Search, Loader2, X } from "lucide-react";
 import { useLang } from "@/hooks/useLang";
 import { fmtNum, toBnDigits } from "@/i18n/strings";
-import { ensureData, lookupTin, type LookupResult } from "@/lib/tinLookup";
+import { ensureData, lookupTin, normalizeTin, type LookupResult } from "@/lib/tinLookup";
+
+// Convert any supported numeral system (Bengali, Arabic-Indic, full-width) to ASCII digits.
+function toAsciiDigits(s: string): string {
+  return s.replace(/[\u0660-\u0669\u06F0-\u06F9\u09E6-\u09EF\uFF10-\uFF19]/g, (ch) => {
+    const code = ch.charCodeAt(0);
+    if (code >= 0x0660 && code <= 0x0669) return String(code - 0x0660);
+    if (code >= 0x06F0 && code <= 0x06F9) return String(code - 0x06F0);
+    if (code >= 0x09E6 && code <= 0x09EF) return String(code - 0x09E6);
+    if (code >= 0xFF10 && code <= 0xFF19) return String(code - 0xFF10);
+    return ch;
+  });
+}
 
 type State =
   | { kind: "idle" }
@@ -29,8 +41,8 @@ export function SearchPanel() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const clean = value.replace(/\D/g, "");
-    if (clean.length !== 12) {
+    const clean = normalizeTin(value);
+    if (!clean) {
       setState({ kind: "error", msg: t.invalidTin });
       return;
     }
@@ -69,7 +81,12 @@ export function SearchPanel() {
               inputMode="numeric"
               autoComplete="off"
               value={formatTinDisplay(value)}
-              onChange={(e) => setValue(e.target.value.replace(/\D/g, "").slice(0, 12))}
+              onChange={(e) => setValue(toAsciiDigits(e.target.value).replace(/\D/g, "").slice(0, 12))}
+              onPaste={(e) => {
+                e.preventDefault();
+                const pasted = e.clipboardData.getData("text");
+                setValue(toAsciiDigits(pasted).replace(/\D/g, "").slice(0, 12));
+              }}
               placeholder={t.searchPlaceholder}
               className="flex-1 bg-transparent px-4 py-5 text-lg md:text-xl font-mono tracking-wide outline-none placeholder:text-muted-foreground/60"
               aria-label={t.searchLabel}
