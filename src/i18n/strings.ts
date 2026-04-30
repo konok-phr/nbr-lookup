@@ -97,7 +97,9 @@ export const strings = {
     lastUpdated: "তথ্য তারিখ: ২৮ এপ্রিল ২০২৬",
     privacy: "১০০% ক্লায়েন্ট-সাইড — কোনো ট্র্যাকিং নেই, কোনো সার্ভার নেই।",
   },
-} as const;
+};
+
+export type Strings = typeof strings.en;
 
 const bnDigits = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
 export function toBnDigits(n: number | string): string {
